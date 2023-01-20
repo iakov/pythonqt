@@ -48,10 +48,6 @@
 #include <cstring>
 #include <memory>
 
-#ifndef RXX_ALLOCATOR_ALIGNMENT_POWER
-#  define RXX_ALLOCATOR_ALIGNMENT_POWER 3U
-#endif
-
 template <class _Tp> class rxx_allocator {
 public:
   typedef _Tp value_type;
@@ -74,7 +70,7 @@ public:
 
   ~rxx_allocator() {
     for (size_type index = 0; index < _M_block_index + 1; ++index)
-      operator delete [](_M_storage[index], (std::align_val_t(1U << RXX_ALLOCATOR_ALIGNMENT_POWER)));
+      delete[] _M_storage[index];
 
     ::free(_M_storage);
   }
@@ -94,7 +90,7 @@ public:
 	  (::realloc(_M_storage, sizeof(char*) * (1 + _M_block_index)));
 
 	_M_current_block = _M_storage[_M_block_index] = reinterpret_cast<char*>
-	  (new (std::align_val_t(1U << RXX_ALLOCATOR_ALIGNMENT_POWER)) char[_S_block_size]);
+	  (new char[_S_block_size]);
 
 #if defined(RXX_ALLOCATOR_INIT_0) // ### make it a policy
 	::memset(_M_current_block, 0, _S_block_size);
@@ -105,10 +101,10 @@ public:
     pointer p = reinterpret_cast<pointer>
       (_M_current_block + _M_current_index);
 
-    if ((_M_current_index & ((1U << RXX_ALLOCATOR_ALIGNMENT_POWER) - 1)) != 0) {
-      _M_current_index += (1U << RXX_ALLOCATOR_ALIGNMENT_POWER) - 1;
-      _M_current_index &= ~((1U << RXX_ALLOCATOR_ALIGNMENT_POWER) - 1);
-    }
+    _M_current_index += bytes;
+    // Hack for modern C++ to get aligned allocations
+    _M_current_index += 7U;
+    _M_current_index &= ~(7U);
 
     return p;
   }

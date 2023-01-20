@@ -4,13 +4,10 @@ INCLUDEPATH += $$GENERATORPATH
 TEMPLATE = app
 TARGET +=
 DEPENDPATH += $$GENERATORPATH tests parser
-mac:CONFIG -= app_bundle
 INCLUDEPATH += $$GENERATORPATH/.
 INCLUDEPATH += $$GENERATORPATH/../common
 
-unix:CONFIG += debug_and_release
-
-CONFIG += console
+CONFIG += cmdline
 RESOURCES += generator.qrc
 
 include($$GENERATORPATH/parser/rxx.pri)
@@ -21,6 +18,7 @@ win32-msvc2005:{
         QMAKE_CXXFLAGS += -wd4996
         QMAKE_CFLAGS += -wd4996
 }
+gcc:QMAKE_CXXFLAGS += -Wno-deprecated-declarations -Wpedantic
 
 # Input
 HEADERS += \

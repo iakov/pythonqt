@@ -170,7 +170,7 @@ jobs:
     - name: Detect exact versions
       id : versions
       run : |
-        set -eux
+        set -eu
         PYTHON_VERSION_FULL=$(python --version 2>&1 | cut -f 2 -d ' ')
         PYTHON_VERSION_SHORT=$(cut -f 1,2 -d . <<< $PYTHON_VERSION_FULL)
         QT_VERSION_FULL=$($Qt5_DIR/bin/qmake -query QT_VERSION)
@@ -195,7 +195,7 @@ jobs:
         for i in "python${{ steps.versions.outputs.PYTHON_VERSION_SHORT }}-embed" "python${{ steps.versions.outputs.PYTHON_VERSION_SHORT }}" \
                  "python${PYTHON_VERSION_MAJOR}-embed" "python${PYTHON_VERSION_MAJOR}"
         do if pkg-config --exists "$i"; then PYTHON_PKGCONFIG_NAME="$i"; break; fi; done
-        qmake CONFIG+=release \
+        qmake CONFIG+=release CONFIG+=sanitizer CONFIG+=sanitize_undefined \
         PYTHON_VERSION=${{ steps.versions.outputs.PYTHON_VERSION_SHORT }} \
         PYTHON_DIR="$pythonLocation" \
         PKGCONFIG+=$PYTHON_PKGCONFIG_NAME \

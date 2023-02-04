@@ -216,11 +216,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-       qt-arch: ['win32_msvc2015']
-       python-version: ['2.7']
-       qt-version: ['5.9.*']
-       python-arch: ['x86']
-       pythonqtall-config: ['PythonQtCore PythonQtGui PythonQtMultimedia']
+       qt-arch: ['win64_mingw73']
+       python-version: ['3.10']
+       qt-version: ['5.12.*']
+       python-arch: ['x64']
+       pythonqtall-config: ['']
 #       msvc-toolset: ['14.0']
        include:
          - qt-arch: 'win64_msvc2017_64'
@@ -234,11 +234,13 @@ jobs:
            python-arch: 'x86'
            qt-version: '5.11.*'
 
-         - qt-arch: 'win64_mingw73'
-           python-version: '3.10'
-           python-arch: 'x64'
-           qt-version: '5.12.*'
-           pythonqtall-config: ''
+#Qt5.9 is sick :(
+#Main problem is QBasicMutex with default ctor, that (by no means) is missing in dll-export of QtCore, but linker tries to find it
+#         - qt-arch: 'win32_msvc2015'
+#           python-version: '2.7'
+#           python-arch: 'x86'
+#           qt-version: '5.9.*'
+#           pythonqtall-config: 'PythonQtCore PythonQtGui PythonQtMultimedia'
 
     runs-on: windows-latest
     steps:

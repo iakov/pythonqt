@@ -12,8 +12,6 @@ DESTDIR    = ../lib
 CONFIG += qt
 CONFIG -= flat
 
-mingw:QMAKE_CXXFLAGS+=-Wa,-mbig-obj
-
 # allow to choose static linking through the environment variable PYTHONQT_STATIC
 isEmpty(PYTHONQT_STATIC) {
 PYTHONQT_STATIC = $$(PYTHONQT_STATIC)

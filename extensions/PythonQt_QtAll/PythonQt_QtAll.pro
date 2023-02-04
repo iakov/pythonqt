@@ -37,6 +37,9 @@ TARGET = $$replace(TARGET, PythonXY, Python$${PYTHON_VERSION})
 
 CONFIG += dll qt
 
+# Force linker to complain on undefined references for dll/so/dylib build when possible
+QMAKE_LFLAGS_SHLIB += $$QMAKE_LFLAGS_NOUNDEF
+
 DEFINES += PYTHONQT_QTALL_EXPORTS
 
 HEADERS +=                \

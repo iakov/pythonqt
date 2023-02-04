@@ -74,6 +74,7 @@ defineTest(Xinclude) {
 PythonQtCore {
   DEFINES += PYTHONQT_WITH_CORE
   Xinclude (com_trolltech_qt_core)
+  QT += core
 }
 
 PythonQtGui  {
@@ -85,7 +86,7 @@ PythonQtGui  {
 PythonQtSvg {
   DEFINES += PYTHONQT_WITH_SVG
   Xinclude (com_trolltech_qt_svg)
-  QT +=svg
+  QT += svg
 }
 
 PythonQtSql {

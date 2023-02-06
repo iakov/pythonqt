@@ -173,7 +173,7 @@ jobs:
         set -eu
         PYTHON_VERSION_FULL=$(python --version 2>&1 | cut -f 2 -d ' ')
         PYTHON_VERSION_SHORT=$(cut -f 1,2 -d . <<< $PYTHON_VERSION_FULL)
-        QT_VERSION_FULL=$($Qt5_DIR/bin/qmake -query QT_VERSION)
+        QT_VERSION_FULL=$($Qt5_Dir/bin/qmake -query QT_VERSION)
         QT_VERSION_SHORT=$(cut -f 1,2 -d . <<< $QT_VERSION_FULL)
         MACOS_VERSION_FULL=$(sw_vers -productVersion)
         MACOS_VERSION_SHORT=$(cut -f 1,2 -d . <<< $MACOS_VERSION_FULL)
@@ -206,7 +206,7 @@ jobs:
       run: |
         cd generator
         # workaround to allow to find the Qt include dirs for installed standard qt packages
-        QTDIR=-UNDEFINED- ./pythonqt_generator --include-paths=$Qt5_DIR/lib
+        QTDIR=-UNDEFINED- ./pythonqt_generator --include-paths=$Qt5_Dir/lib
 
     - name: Upload Wrappers
       uses: actions/upload-artifact@v3

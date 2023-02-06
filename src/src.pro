@@ -18,7 +18,7 @@ PYTHONQT_STATIC = $$(PYTHONQT_STATIC)
 }
 
 isEmpty(PYTHONQT_STATIC) {
-  CONFIG += dll ltcg
+  CONFIG += dll
 } else {
   CONFIG += static
 }

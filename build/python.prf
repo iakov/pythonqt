@@ -1,20 +1,57 @@
 # profile to include and link Python
 
-
 # Change this variable to your python version (2.6, 2.7, 3.3, ...)
 isEmpty( PYTHON_VERSION ) {
   PYTHON_VERSION=$$(PYTHON_VERSION)
 }
-isEmpty( PYTHON_VERSION ) {
-  win32:PYTHON_VERSION=27
-  unix:PYTHON_VERSION=2.7
+
+isEmpty(PYTHON_DIR):PYTHON_DIR=$$(PYTHON_DIR)
+!isEmpty(PYTHON_DIR):error(Use PYTHON_CMD to choose the exact Python installation instead of PYTHON_DIR)
+
+isEmpty(PYTHON_CMD):PYTHON_CMD=$$(PYTHON_CMD)
+
+
+isEmpty(PYTHON_CMD){
+    !isEmpty(PYTHON_VERSION) {
+       PYTHONS_TO_CHECK = python$$PYTHON_VERSION python$$section(PYTHON_VERSION, ., 0, 0)
+    }
+    PYTHONS_TO_CHECK += python3 python python2 "Use PYTHON_CMD or PYTHON_VERSION"
+    PYTHONS_TO_CHECK = $$unique(PYTHONS_TO_CHECK)
+    for(PYTHON_CMD_ATTEMPT, PYTHONS_TO_CHECK) {
+      system($$PYTHON_CMD_ATTEMPT --version 1>$$QMAKE_SYSTEM_NULL_DEVICE 2>$$QMAKE_SYSTEM_NULL_DEVICE) {
+	message("PYTHON_CMD not set, using available $$system_quote(\'$$PYTHON_CMD_ATTEMPT\') command")
+	PYTHON_CMD=$$PYTHON_CMD_ATTEMPT
+	break()
+      }
+    }
 }
 
-isEmpty( PYTHON_DIR ) {
-  PYTHON_DIR=$$(PYTHON_DIR)
+PYTHON_CMD_FULL=$$system_path($$system($$system_quote($$PYTHON_CMD) -c $$system_quote(import sys;print(sys.executable))))
+
+!isEmpty(PYTHON_CMD_FULL):exists($$PYTHON_CMD_FULL) {
+    PYTHON_CMD="$$PYTHON_CMD_FULL"
+} else {
+    error("Failed to run python: $$system_quote(\"$$PYTHON_CMD\"), try it yourself, please, from command line.")
 }
-!isEmpty( PYTHON_DIR ) {
-  PYTHON_DIR=$${PYTHON_DIR}/
+
+PYTHON_PATH=$$system($$system_quote($${PYTHON_CMD}) -c \
+$$system_quote(import os;import sys;print(os.path.dirname(sys.executable))))$${QMAKE_DIR_SEP}
+
+#Not just "python --version" because Python 2 outputs `--version` to the stderr
+#And there is no simple way known for me to generally redirect stderr to stdout
+PYTHON_VERSION_DETECTED=$$system($$system_quote($${PYTHON_CMD}) -c \
+	    $$system_quote(import sysconfig;print(sysconfig.get_python_version())))
+
+isEmpty( PYTHON_VERSION ) {
+#   PYTHON_VERSION should be set explicitly from qmake command-line or via environment.
+#   F.e.: qmake PYTHON_VERSION=3.6 CONFIG+=release
+#     or set PYTHON_VERSION=2.7
+   !equals(PYTHON_CMD_FULL, $$PYTHON_CMD):warning("Missing desired PYTHON_VERSION, trying $${PYTHON_CMD} executable to guess the version.")
+   PYTHON_VERSION=$$PYTHON_VERSION_DETECTED
+}
+
+!equals(PYTHON_VERSION, $$PYTHON_VERSION_DETECTED){
+   error("Found Python version $$PYTHON_VERSION_DETECTED, but $$PYTHON_VERSION was requested")
 }
 
 PYTHON_VERSION_MAJOR=$$section(PYTHON_VERSION, ., 0, 0)
@@ -26,50 +63,50 @@ PYTHON_VERSION_MINOR=$$section(PYTHON_VERSION, ., 1, 1)
   message(Using Python version $${PYTHON_VERSION})
 }
 
-
 # Python 2.x has problems:
 # 1) https://wiki.gentoo.org/wiki/Project:Python/Strict_aliasing
 # 2) deprecated implicit cast of string literals to char*
-equals(PYTHON_VERSION_MAJOR, 2):gcc:QMAKE_CXXFLAGS *= -fno-strict-aliasing -Wno-error=write-strings
+equals(PYTHON_VERSION_MAJOR, 2) {
+   gcc:QMAKE_CXXFLAGS *= -fno-strict-aliasing -Wno-write-strings
+   # Qt 5.4 adds this option, but this is not compatible with the Python API
+   msvc: QMAKE_CXXFLAGS -= -Zc:strictStrings
+
+   #We need to destinguish 64-bit build to add a workaround option
+   win32:isEmpty(QMAKE_TARGET.arch):system($$system_quote($${PYTHON_CMD}) -c \
+   $$system_quote(import sysconfig;exit(not sysconfig.get_platform().find(\'amd64\')))):DEFINES += MS_WIN64
+}
+
 contains(PKGCONFIG, "python.*"){
   CONFIG += link_pkgconfig
   PYTHON_PKGCONFIG = $$member($$unique($$find(PKGCONFIG, "python.*")), 1, 1)
   # add rpath
   PYTHON_LIBDIR = $$system($$pkgConfigExecutable() --libs-only-L $$PYTHON_PKGCONFIG)
   QMAKE_RPATHDIR += $$replace(PYTHON_LIBDIR,-L,)
-} else:macx:isEmpty(PYTHON_DIR){
+} else:macx:isEmpty(PYTHON_CMD){
   # for macx you need to have the Python development kit installed as framework
   INCLUDEPATH += /System/Library/Frameworks/Python.framework/Headers
   LIBS += -F/System/Library/Frameworks -framework Python
 } else:win32 {
-  # for windows install a Python development kit or build Python yourself from the sources
-  # Make sure that you set the environment variable PYTHON_PATH to point to your
-  # python installation (or the python sources/header files when building from source).
-  # Make sure that you set the environment variable PYTHON_LIB to point to
-  # the directory where the python libs are located.
-  #
-  # When using the prebuild Python installer, this will be:
-  # set PYTHON_PATH = c:\Python26
-  # set PYTHON_LIB  = c:\Python26\libs
-  #
-  # When using the python sources, this will be something like:
-  # set PYTHON_PATH = c:\yourDir\Python-2.6.1\
-  # set PYTHON_LIB  = c:\yourDir\Python-2.6.1\PCbuild8\Win32
-
-  # check if debug or release
   CONFIG(debug, debug|release) {
     DEBUG_EXT = _d 
   } else {
     DEBUG_EXT = 
   }
 
-  win32:INCLUDEPATH += $$(PYTHON_PATH)/PC $$(PYTHON_PATH)/include
-  win32:LIBS += $$(PYTHON_LIB)/python$${PYTHON_VERSION}$${DEBUG_EXT}.lib
+  INCLUDEPATH += $$system($$system_quote($${PYTHON_CMD}) -c \
+		$$system_quote(import sysconfig;print(\'\"%s\" \"%s\"\'%(sysconfig.get_paths()[\'include\'],sysconfig.get_paths()[\'platinclude\']))))
+
+  LIBS += -L$${PYTHON_PATH}libs
+  LIBS += -lpython$${PYTHON_VERSION_MAJOR}$${PYTHON_VERSION_MINOR}
+
+  # Hack for "CONFIG+=testcase" and 'make check' to add python's dll to PATH
+  deppath += $$PYTHON_PATH
+
 } else:unix {
   # on linux, python-config is used to autodetect Python.
   # make sure that you have installed a matching python-dev package.
   
-  PYTHON_CONFIG = $${PYTHON_DIR}/bin/python$${PYTHON_VERSION}-config
+  PYTHON_CONFIG = $${PYTHON_PATH}python$${PYTHON_VERSION}-config
   PYTHON_CONFIG_OPTIONS_LIBS = --libs
   equals(PYTHON_VERSION_MAJOR, 3):!lessThan(PYTHON_VERSION_MINOR, 8) {
     # Since 3.8 `--embed` is needed

@@ -2426,7 +2426,6 @@ QString PythonQtPrivate::getSignature(PyObject* object)
           Py_DECREF(s);
         }
       }
-        
       QStringList arguments;
       QStringList defaults;
       QString varargs;

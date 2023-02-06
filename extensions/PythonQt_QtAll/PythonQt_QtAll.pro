@@ -35,10 +35,10 @@ include ( ../../build/common.prf )
 include ( ../../build/PythonQt.prf )  
 TARGET = $$replace(TARGET, PythonXY, Python$${PYTHON_VERSION})
 
-CONFIG += qt
+CONFIG += qt c++11 strict_c++
 
 !static:!staticlib {
-  CONFIG += dll
+  CONFIG += dll ltcg
   # Force linker to complain on undefined references for dll/so/dylib build when possible
   QMAKE_LFLAGS_SHLIB += $$QMAKE_LFLAGS_NOUNDEF
 }

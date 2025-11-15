@@ -19,8 +19,6 @@ DEFINES += QT_NO_CAST_TO_ASCII
 
 gcc: QMAKE_CXXFLAGS += -pedantic -Winit-self -Wuninitialized
 
-QT += widgets
-
 include ( ../build/common.prf )
 include ( ../build/PythonQt.prf )
 include ( ../build/PythonQt_QtAll.prf )

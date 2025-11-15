@@ -43,7 +43,7 @@
 #include "PythonQtTests.h"
 #include "PythonQtTestCleanup.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 
 int main(int argc, char *argv[])
 {
